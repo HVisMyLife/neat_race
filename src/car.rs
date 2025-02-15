@@ -14,8 +14,9 @@ pub struct Car {
     velocity_ang: f32,
     mass: f32,
     friction: f32,
-    score: u128,
-    distance: i128
+    pub distance: isize,
+    pub agility: f32,
+    pub alive: bool
 }
 
 impl Car {
@@ -24,7 +25,7 @@ impl Car {
             points: points_relative.clone(), points_relative, 
             position: position.clone(), position_last: position, velocity: Point::new(0.0, 0.0), 
             angle, velocity_ang: 0.0, 
-            mass, friction, score: 100, distance: 0
+            mass, friction, distance: 0, agility: 100., alive: true
         } 
     }
 
@@ -54,22 +55,12 @@ impl Car {
         self.velocity_ang += acc / self.mass * dt;
     }
 
-    pub fn reset(&mut self, pos: Point, angle: f32) {
+    pub fn _reset(&mut self, pos: Point, angle: f32) {
         self.position = pos.clone();
         self.position_last = pos;
         self.angle = angle;
         self.velocity_ang = 0.0;
         self.velocity = Point::new(0.0, 0.0);
-        self.score = 100;
-        self.distance = 0;
-    }
-
-    pub fn add_score(&mut self, s: i128) {
-        if (self.score as i128 + s) >= 0 {self.score = (self.score as i128 + s) as u128;}
-    }
-
-    pub fn add_dst(&mut self, s: i128) {
-        self.distance += s;
     }
 
     pub fn get_angle(&self) -> &f32 {
@@ -81,14 +72,6 @@ impl Car {
     }
     pub fn get_position_last(&self) -> &Point {
         &self.position_last
-    }
-
-    pub fn get_score(&self) -> &u128 {
-        &self.score
-    }
-
-    pub fn get_dst(&self) -> &i128 {
-        &self.distance
     }
 
     pub fn get_velocity(&self) -> &Point {

@@ -1,14 +1,14 @@
 use crate::global::Point;
 use rand::prelude::*;
-use rand_chacha::ChaCha8Rng;
 
 
-pub fn gen_track(grain: usize, res: usize, size: (Point, Point), width: f32, rng: &mut ChaCha8Rng) -> (Vec<Point>, Vec<Point>) {
+pub fn gen_track(grain: usize, res: usize, size: (Point, Point), width: f32) -> (Vec<Point>, Vec<Point>) {
 
     let mut track: Vec<Point> = vec![];
 
+    let mut rng = rand::rng();
     for _ in 0..grain {
-        track.push(Point::new(rng.gen_range(size.0.x..size.1.x), rng.gen_range(size.0.y..size.1.y)));
+        track.push(Point::new(rng.random_range(size.0.x..=size.1.x), rng.random_range(size.0.y..=size.1.y)));
     }
     track = calculate_convex_hull(&track);
     track = chaikin_corner_cutting(&track, res);
