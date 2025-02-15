@@ -3,5 +3,5 @@
 Example project showing how to use NEAT crate, from my other repo:
 https://github.com/HVisMyLife/rusty_neat
 
-Save best agent by pressing 's', load by pressing 'l'.
-They usually became pretty good at staying alive around generation 10.
+Diffrent species are recogizable by diffrent colors.
+UI and polishing soon to be... I'm finishing neat lib and needed somwhere to test it.
