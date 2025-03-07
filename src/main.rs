@@ -9,7 +9,7 @@ use macroquad::prelude::{Color, GRAY, BLACK, DARKGRAY, is_key_pressed, KeyCode};
 
 
 use rayon::prelude::*;
-use rusty_neat::{NeatHandler, NN, ActFunc};
+use rusty_neat::{NeatIntermittent, NN, ActFunc};
 
 mod global;
 use global::{Point, point_in_polygon, closest_index, move_perp, get_angle, average_distance};
@@ -46,8 +46,9 @@ async fn main() {
     let mut track_l = track.len();
     let dst_mod = 1750.0 / average_distance(&track);
 
-    let mut neat = NeatHandler::new( 
-        &NN::new(RAY_AMOUNT + 2, 2, RECURRENCE, ActFunc::SigmoidBipolar, 0), 
+    let mut neat = NeatIntermittent::new( 
+        &NN::new(RAY_AMOUNT + 2, 2, None, RECURRENCE, 
+            ActFunc::SigmoidBipolar, &[ActFunc::SigmoidBipolar, ActFunc::SELU, ActFunc::HyperbolicTangent]), 
         ENTITIES_AMOUNT );
     neat.speciate();
     let mut cars = vec![];
@@ -68,6 +69,7 @@ async fn main() {
     let mut dt: f32;
     let mut dt_clock = Instant::now();
     let mut generation: usize = 0;
+    let mut fta = FrameTimeAnalyzer::new(32);
     
     loop {
         //println!("{:?}", neat.agents[0]);
@@ -85,10 +87,12 @@ async fn main() {
             );
 
             track_l = track.len();
+            neat.agents.iter_mut().for_each(|a| a.fitness = a.fitness.sqrt().sqrt() );
 
             neat.next_gen();
-            neat.mutate();
+            neat.mutate(None);
             neat.speciate();
+            //while neat.species_table.len() != neat.species_amount {neat.speciate();}
 
             cars.clear();
 
@@ -126,7 +130,7 @@ async fn main() {
             i.push(*c.get_velocity_ang());
             i.append(&mut rv); }
         } );
-        neat.forward(ins);
+        neat.forward(&ins);
         cars.par_iter_mut().zip_eq(neat.agents.par_iter_mut()).for_each(|(c,a)|{
             if c.alive {
             let o = a.get_outputs();
@@ -195,7 +199,8 @@ async fn main() {
         //draw_nn(&entities[best]);
         
         // fps
-        draw_text(&("FPS: ".to_owned() + &(get_fps()).to_string()), WINDOW_SIZE.0 as f32 - 110.0, 20.0, 30.0, DARKGRAY);
+        fta.add_frame_time(get_fps() as f32);
+        draw_text(&("FPS: ".to_owned() + &(fta.smooth_frame_time()).to_string()), WINDOW_SIZE.0 as f32 - 110.0, 20.0, 30.0, DARKGRAY);
         // gen number
         draw_text(&("GEN: ".to_owned() + &(generation).to_string()), 10.0, WINDOW_SIZE.1 as f32 - 10.0, 50.0, DARKGRAY);
         // time
@@ -263,6 +268,29 @@ fn _draw_cooldown(clock: Instant, text: &str, size: f32) {
     }
 }
 
+pub struct FrameTimeAnalyzer {
+    frame: Vec<f32>,
+    s_time: f32,
+}
+
+impl FrameTimeAnalyzer {
+    pub fn new(length: usize) -> Self {
+        FrameTimeAnalyzer {
+            frame: vec![0.; length],
+            s_time: 0.,
+        }
+    }
+
+    pub fn add_frame_time(&mut self, time: f32) {
+        self.frame.pop();
+        self.frame.insert(0, time);
+    }
+
+    pub fn smooth_frame_time(&mut self) -> &f32 {
+        self.s_time = self.frame.iter().sum::<f32>() / (self.frame.len() as f32);
+        &self.s_time
+    }
+}
 
 fn conf() -> Conf {
     let p = Platform {
