@@ -47,9 +47,9 @@ async fn main() {
     let dst_mod = 1750.0 / average_distance(&track);
 
     let mut neat = NeatIntermittent::new( 
-        &NN::new(RAY_AMOUNT + 2, 2, None, RECURRENCE, 
+        &NN::new(RAY_AMOUNT + 2, 2, None, RECURRENCE, 0.75,
             ActFunc::SigmoidBipolar, &[ActFunc::SigmoidBipolar, ActFunc::SELU, ActFunc::HyperbolicTangent]), 
-        ENTITIES_AMOUNT );
+        ENTITIES_AMOUNT, 7 );
     neat.speciate();
     let mut cars = vec![];
     (0..neat.agents.len()).into_iter().for_each(|_| 
